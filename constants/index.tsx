@@ -4,6 +4,7 @@ import {
   GroupOutlined,
   BookmarksOutlined,
   FavoriteBorder,
+  SignLanguage,
 } from "@mui/icons-material";
 
 
@@ -33,6 +34,11 @@ export const sidebarLinks = [
     route: "/liked-posts",
     label: "Liked Posts",
   },
+  {
+    icon: <SignLanguage sx={{ color: "white", fontSize: "26px" }} />,
+    route: "/sign-to-speech",
+    label: "Sign To Speech",
+  }
 ];
 
 export const pageTitles = [
