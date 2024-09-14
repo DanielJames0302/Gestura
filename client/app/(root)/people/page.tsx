@@ -24,11 +24,6 @@ const People = () => {
     getAllUsers()
   }, [])
 
-
-  const router = useRouter()
-  if (!router.isFallback && !allUsers) {
-      return <ErrorPage statusCode={404} />
-  }
   return loading ? <Loader /> : (
     <div className='flex flex-col gap-4 py-6'>
       {allUsers && allUsers?.map((user: any) => (
