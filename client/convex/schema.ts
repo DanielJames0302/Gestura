@@ -25,6 +25,7 @@ export default defineSchema({
     creatorId: v.union(v.id("users"), v.null()),
     caption: v.string(),
     postVideo: v.string(),
+    signVideo: v.optional(v.string()),
     tag: v.string(),
   }).index("byCreatorId", ["creatorId"]).searchIndex("search_post",{
     searchField: "caption",

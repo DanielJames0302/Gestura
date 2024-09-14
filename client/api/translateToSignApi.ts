@@ -14,9 +14,29 @@ export const translateToSignApi =  {
     return Promise.reject(response.status)
   },
 
-  uploadVideo: async (body: FormData) => {
+  generateAslVideo: async (body: any) => {
+    const url = "/generate-asl";
+    const response = await axiosClient.post(url, body, {
+      responseType: "arraybuffer"
+    });
+
+    if (response.status === 200) {
+      return response;
+    }
+
+    return Promise.reject(response.status)
+  },
+
+  uploadSignVideo: async (body: FormData) => {
     console.log(body)
     const url = "/upload";
+    const response = await axiosClient.post(url, body)
+
+    return response;
+  },
+  uploadNormalVideo: async (body: FormData) => {
+    console.log(body)
+    const url = "/upload-normal-video";
     const response = await axiosClient.post(url, body)
 
     return response;

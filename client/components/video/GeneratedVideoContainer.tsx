@@ -52,7 +52,7 @@ const GeneratedVideoContainer: React.FC<GeneratedVideoContainerProps> = ({
   return (
     <div>
       <div className="flex flex-col gap-2">
-        <div className="font-bold text-[24px]">- Generated Video -</div>
+        <div className="font-bold text-white text-[24px]">- Generated Video -</div>
         {generatedVideoSource && (
           <video
             width="500"

@@ -13,6 +13,7 @@ export const createPost = mutation({
     creatorId: v.id("users"),
     caption: v.string(),
     postVideo: v.string(),
+    signVideo: v.optional(v.string()),
     tag: v.string(),
   },
   handler: async (ctx, args) => {

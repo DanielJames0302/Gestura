@@ -8,7 +8,10 @@ import datetime
 import json
 from fastapi import HTTPException
 from utils.video_utils import read_video
-
+from moviepy.editor import VideoFileClip
+import speech_recognition as sr
+from utils.tokenize_text import tokenize_text
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 import os
 
 async def translate_sign_language_to_text(video: UploadFile) -> str:
@@ -149,66 +152,48 @@ async def generate_final_video(video: UploadFile, captions: str, speech_audio_fi
     generated_video_file_path = output_path
     return output_path
 
-"""
-async def generate_final_video_2(video: UploadFile, captions: str, speech_audio_file_path: str):
+def extract_audio_from_video(file, audio_path):
+    # Load the video file
+    temp_video_path = f"temp_videos/{file.filename}"
+
+    with open(temp_video_path, "wb") as f:
+        f.write(file.file.read())
+
+    video = VideoFileClip(temp_video_path)
+    video.audio.write_audiofile(audio_path)
+
+    video.close()
+    os.remove(temp_video_path)
+
+async def extract_captions_from_video(audio_file) -> str:
+    recognizer = sr.Recognizer()
+    with sr.AudioFile(audio_file) as source:
+        audio_data = recognizer.record(source)
+    try:
+        text =  recognizer.recognize_google(audio_data)
+        return text
+    except sr.UnknownValueError:
+        print("Speech Recognition could not understand the audio")
+    except sr.RequestError as e:
+        print(f"Could not request results from Google Speech Recognition service; {e}")
 
 
-    output_video_frames = [] 
+async def generate_sign_language_video(file, captions):
+    tokens = tokenize_text(captions)
+    print(tokens)
 
-    # Edit the Video
-    full_file_path = save_file_to_local(video=video)
-    video_path = full_file_path
-    output_path = generate_captioned_video_filepath(full_file_path)
-    cap = cv2.VideoCapture(video_path)
-    video_frames = read_video(video_path)
-
-
-
-    # Get the frame rate and frame size of the video
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # Define the codec and create VideoWriter object
+    clips = []
+    for token in tokens[3:5]:
+        video_path = f'wlasl/{token}.mp4'
+        if os.path.exists(video_path):
+            clips.append(VideoFileClip(video_path))
     
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
-    frame_count=0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame_count+=1
-        current_time = frame_count / fps
-        timestamp_str = '0'+str(datetime.timedelta(seconds=int(current_time)))
-        
-        processed_cleaned_captions = json.loads(captions)
-        
-        if timestamp_str in processed_cleaned_captions.keys():
-                text=processed_cleaned_captions[timestamp_str]
-                # Get the text size
-                font = cv2.FONT_HERSHEY_PLAIN
-                font_scale = 2
-                thickness = 2
-                text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
-                text_width, text_height = text_size
-
-                # Calculate the position to center the text at the bottom
-                x = (frame_width - text_width) // 2
-                y = frame_height - 30  # 30 pixels from the bottom
-                cv2.putText(frame, text, (x, y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-                output_video_frames.append(frame)
-                print("written",text)
-    cap.release()
-    out.release()
-    print(f"completed writing to {output_path}")
-
-    if speech_audio_file_path:
-        # TODO: Add Audio to video
-        pass
-
-    # Return generated video file path
-    generated_video_file_path = output_path
-    print(generate_captioned_video_filepath)
-    return save_video(output_video_frames,generated_video_file_path)
-"""
+    if clips:
+        # Concatenate the clips into one video
+        final_clip = concatenate_videoclips(clips, method="compose")
+        output_path = f"video_output_path/{file.filename}-sign-version.mp4"
+        final_clip.write_videofile(output_path)
+        return output_path
+    else:
+        return None
+  

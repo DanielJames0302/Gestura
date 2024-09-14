@@ -15,6 +15,7 @@ interface UploadVideoContainerProps {
   setGeneratedVideo: React.Dispatch<
     React.SetStateAction<Blob | null | undefined>
   >;
+  videoType: string
 }
 export interface VideoUploadResponseSchema {
   captions: string;
@@ -23,6 +24,7 @@ const UploadVideoContainer: React.FC<UploadVideoContainerProps> = ({
   uploadedVideo,
   setUploadedVideo,
   setGeneratedVideo,
+  videoType
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -55,7 +57,14 @@ const UploadVideoContainer: React.FC<UploadVideoContainerProps> = ({
     formData.append("file", selectedFile);
 
     try {
-      const response = await translateToSignApi.uploadVideo(formData);
+
+      let response;
+      if (videoType==='normal-video') {
+        response = await translateToSignApi.uploadNormalVideo(formData);
+      } else {
+        response = await translateToSignApi.uploadSignVideo(formData);
+      }
+     
       setGeneratedCaptions(response.data.captions);
       setErrorMessage("");
 
@@ -78,21 +87,17 @@ const UploadVideoContainer: React.FC<UploadVideoContainerProps> = ({
     if (!uploadedVideo) return toast.error("Please upload a video!");
     setLoadingMessage("Please wait for generating video");
     setIsLoading(true);
-    const features = {
-      sign_to_speech: {
-        selected: true,
-      },
-      sign_to_emoji: {
-        selected: false,
-      },
-    };
     const formData = new FormData();
     formData.append("file", uploadedVideo);
     formData.append("captions", generatedCaptions);
-    formData.append("features", JSON.stringify(features));
-
+    let response;
     try {
-      const response = await translateToSignApi.generateVideo(formData);
+      if (videoType === 'normal-video') {
+        response = await translateToSignApi.generateAslVideo(formData)
+      } else {
+        response = await translateToSignApi.generateVideo(formData);
+      }
+      
       const generatedVideoBlob = new Blob([response.data], {type:'video/mp4'})
   
       setGeneratedVideo(generatedVideoBlob);
@@ -149,8 +154,7 @@ const UploadVideoContainer: React.FC<UploadVideoContainerProps> = ({
           Generated Captions
         </div>
         <div className="text-white text-[14px]">
-          Please check the auto-generated captions from sign language detected
-          in the video (Please keep the formatting the same).
+          Please check the auto-generated captions (Please keep the formatting the same).
         </div>
         <textarea
           className="h-[200px] rounded-md border-2 border-gray-300 border-dashed focus:outline-none"

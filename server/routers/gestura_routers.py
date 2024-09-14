@@ -17,22 +17,25 @@ async def upload_video(file: UploadFile) -> dict[str, str]:
   print(file.file)
   return await GesturaController.translate_sign_language_to_text(file=file)
 
+@router.post("/upload-normal-video", tags=["Gestura"], response_model=UploadVideoResponseSchema)
+async def upload_normal_video(file: UploadFile) -> dict[str,str]:
+   print(file)
+   return await GesturaController.extract_captions_from_video(file=file)
 
-@router.post("/generate", tags=["AiSL"])
-async def generate_video(file: UploadFile, captions: Annotated[str, Form()], features: Annotated[str, Form()]) -> FileResponse:
+
+@router.post("/generate-asl", tags=["Gestura"])
+async def generate_asl_video(file: UploadFile, captions: Annotated[str, Form()]) -> FileResponse:
+   return await GesturaController.generate_sign_language_video(file=file, captions=captions)
+   
+
+
+@router.post("/generate", tags=["Gestura"])
+async def generate_video(file: UploadFile, captions: Annotated[str, Form()]) -> FileResponse:
     # Parse `features` json
-    features_json = json.loads(features)
-    features: RequestFeaturesSchmea =  RequestFeaturesSchmea(
-        sign_to_emoji=features_json["sign_to_emoji"],
-        sign_to_speech=features_json["sign_to_speech"]
-    )
-    
     print(file.filename)
     print(captions)
-    print(features)
     
     return await GesturaController.generate_video(
         file=file,
-        captions=captions,
-        features=features
+        captions=captions
     )

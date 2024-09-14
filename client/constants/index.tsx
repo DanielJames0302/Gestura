@@ -5,8 +5,8 @@ import {
   BookmarksOutlined,
   FavoriteBorder,
   SignLanguage,
+  RecordVoiceOverOutlined
 } from "@mui/icons-material";
-
 
 export const sidebarLinks = [
   {
@@ -24,21 +24,19 @@ export const sidebarLinks = [
     route: "/people",
     label: "People",
   },
-  {
-    icon: <BookmarksOutlined sx={{ color: "white", fontSize: "26px" }} />,
-    route: "/saved-posts",
-    label: "Saved Posts",
-  },
-  {
-    icon: <FavoriteBorder sx={{ color: "white", fontSize: "26px" }} />,
-    route: "/liked-posts",
-    label: "Liked Posts",
-  },
+
+
   {
     icon: <SignLanguage sx={{ color: "white", fontSize: "26px" }} />,
-    route: "/sign-to-speech",
-    label: "Sign To Speech",
-  }
+    route: "/sign-to-text",
+    label: "Sign To Text",
+  },
+  {
+    icon: <RecordVoiceOverOutlined sx={{ color: "white", fontSize: "26px" }} />,
+    route: "/speech-to-sign",
+    label: "Speech To Sign",
+  },
+
 ];
 
 export const pageTitles = [

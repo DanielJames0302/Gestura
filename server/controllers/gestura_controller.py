@@ -23,6 +23,20 @@ class GesturaController:
       raise HTTPException(500, "Failed to generate captions from sign language!")
     return { "captions": captions }
   
+  async def extract_captions_from_video(file=UploadFile) -> dict[str,str]:
+    audio_path = 'audio_output_path/extracted_audio.wav'
+
+    gestura_services.extract_audio_from_video(file=file, audio_path=audio_path)
+    captions = await gestura_services.extract_captions_from_video(audio_path)
+
+    print("captions: " ,captions)
+  
+    if not captions:
+      raise HTTPException(500, "Failed to generate captions from sign language")
+    
+    return { "captions": captions}
+    
+  
 
   async def generate_video(
     file: UploadFile,
@@ -35,22 +49,11 @@ class GesturaController:
       return FileResponse(edited_video_file_path)
     
 
-    speech_audio_file_path, emoji_captions = None, None
-
     # Text to Speech Feature
-    if features.sign_to_speech.selected:
-      speech_audio_file_path = await gestura_services.generate_text_to_speech(captions=captions)
-      print(speech_audio_file_path)
-      if not speech_audio_file_path:
-        raise HTTPException(500, "Failed to generate speech from captions!")
-  
-    # Text to Emoji Feature
-    if features.sign_to_emoji.selected:
-      emoji_captions = await gestura_services.generate_text_to_emoji(captions=captions)
-      print(emoji_captions)
-      if not emoji_captions:
-        raise HTTPException(500, "Failed to generate emojis from captions!")
-      captions = emoji_captions # Overwrite the original captions with the emoji version
+    speech_audio_file_path = await gestura_services.generate_text_to_speech(captions=captions)
+    print(speech_audio_file_path)
+    if not speech_audio_file_path:
+      raise HTTPException(500, "Failed to generate speech from captions!")
   
     # Generate Video
     edited_video_file_path = await gestura_services.generate_final_video(
@@ -64,3 +67,21 @@ class GesturaController:
     print("edited file path + " ,edited_video_file_path)
 
     return FileResponse(edited_video_file_path)
+  
+  async def generate_sign_language_video(
+      file: UploadFile,
+      captions: str,
+  )->FileResponse: 
+    generated_video_file_path = await gestura_services.generate_sign_language_video(
+      file=file,
+      captions=captions
+    )
+
+    if not generated_video_file_path:
+        raise HTTPException(500, "Failed to generate video!")
+    
+    return FileResponse(generated_video_file_path)
+    
+    
+  
+

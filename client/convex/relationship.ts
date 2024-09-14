@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { asyncMap } from "convex-helpers";
 
 export const follow = mutation({
@@ -28,6 +28,14 @@ export const follow = mutation({
    }
   },
 });
+
+export const getAllUsers = query({
+  handler: async(ctx) => {
+    const user = ctx.db.query("users").collect();
+
+    return user;
+  }
+})
 
 
 

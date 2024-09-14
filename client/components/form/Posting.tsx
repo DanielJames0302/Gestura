@@ -1,7 +1,6 @@
 "use client"
 
 import { AddPhotoAlternateOutlined } from "@mui/icons-material";
-import Image from "next/image";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
@@ -15,6 +14,7 @@ interface Post {
   caption: string;
   tag: string;
   postVideo: FileList | string | null;
+  signVideo: FileList | string | null;
 }
 
 interface PostingProps {
@@ -58,7 +58,13 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
       postForm.append("creatorId", data.creatorId);
       postForm.append("caption", data.caption);
       postForm.append("tag", data.tag);
+      let signVideoUrl;
 
+      if (typeof data.signVideo !== "string" && data.signVideo) {
+        signVideoUrl = await uploadCloudinary(data.signVideo[0]);
+      } else {
+        signVideoUrl = data.signVideo;
+      }
       if (typeof data.postVideo !== "string" && data.postVideo) {
         const videoUrl = await uploadCloudinary(data.postVideo[0]);
         postForm.append("postPhoto", videoUrl);
@@ -66,6 +72,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
           creatorId: data.creatorId,
           caption: data.caption,
           postVideo: videoUrl,
+          signVideo: signVideoUrl,
           tag: data.tag,
         }); 
        
@@ -75,6 +82,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
           creatorId: data.creatorId,
           caption: data.caption,
           postVideo: data.postVideo,
+          signVideo: signVideoUrl,
           tag: data.tag,
         }); 
       }
@@ -90,7 +98,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
       onSubmit={handleSubmit(handlePublish)}
     >
       <label
-        htmlFor="photo"
+        htmlFor="postVideo"
         className="flex gap-4 items-center text-light-1 cursor-pointer"
       >
         {watch("postVideo")?.length ? (
@@ -126,6 +134,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
         )}
         <p>Upload a video</p>
       </label>
+
       <input
         {...register("postVideo", {
           validate: (value) => {
@@ -139,7 +148,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
             return true;
           },
         })}
-        id="photo"
+        id="postVideo"
         type="file"
         accept="video/*"
         style={{ display: "none" }}
@@ -151,6 +160,70 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
             errors.postVideo.message}
         </p>
       )}
+      <label
+        htmlFor="signVideo"
+        className="flex gap-4 items-center text-light-1 cursor-pointer"
+      >
+        {watch("signVideo")?.length ? (
+          // Check profile photo is a string or a file
+          typeof watch("signVideo") === "string" ? (
+            <video
+              width="250"
+              height="200"
+              controls
+              className="object-cover rounded-lg"
+            >
+              <source src={watch("signVideo") as string} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <video
+              width="500"
+              height="500"
+              controls
+              className="object-cover rounded-lg"
+            >
+              <source
+                src={URL.createObjectURL((watch("signVideo") as FileList)[0])}
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+          )
+        ) : (
+          <AddPhotoAlternateOutlined
+            sx={{ fontSize: "100px", color: "white" }}
+          />
+        )}
+        <p>Upload a sign language video (Optional)</p>
+      </label>
+
+      <input
+        {...register("signVideo", {
+          validate: (value) => {
+            if (
+              typeof value === null ||
+              (Array.isArray(value) && value.length === 0) ||
+              value === "underfined"
+            ) {
+              return "A video is required!";
+            }
+            return true;
+          },
+        })}
+        id="signVideo"
+        type="file"
+        accept="video/*"
+        style={{ display: "none" }}
+      />
+      {errors.signVideo && (
+        <p className="text-red-500">
+          {" "}
+          {typeof errors.signVideo.message === "string" &&
+            errors.signVideo.message}
+        </p>
+      )}
+   
       <div>
         <label htmlFor="caption" className="text-light-1">
           {" "}
