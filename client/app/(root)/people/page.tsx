@@ -23,7 +23,6 @@ const People = () => {
   useEffect(() => {
     getAllUsers()
   }, [])
-
   return loading ? <Loader /> : (
     <div className='flex flex-col gap-4 py-6'>
       {allUsers && allUsers?.map((user: any) => (
