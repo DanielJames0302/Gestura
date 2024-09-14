@@ -29,6 +29,7 @@ const CreatePost = () => {
     creatorId: userData?._id,
     caption: "",
     tag: "",
+    signVideo: null,
     postVideo: null,
   }
   return loading || !isLoaded ? <Loader /> : (
