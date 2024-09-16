@@ -1,7 +1,4 @@
-# Project Name
-
-## Table of Contents
-# About the Project
+# Gestura
 
 ## Inspiration
 Gestura was inspired by the need to bridge the communication gap for the deaf-mute community in the digital world. Many platforms today lack accessibility for sign language users, limiting their engagement with content. Our goal was to create a platform where the deaf-mute community could connect, share, and consume content with ease, just like anyone else.
@@ -24,19 +21,14 @@ Throughout this project, we learned how crucial it is to design technology with 
 ## What's next for Gestura
 We plan to expand Gestura by enhancing the accuracy of our sign language recognition model and adding support for more sign languages worldwide. Additionally, we aim to create community features, allowing users to interact and share content more freely. We're also exploring partnerships with educational organizations to use Gestura as a learning platform for sign language.
 
-## About the Project
-Briefly describe what the project is about, its purpose, and its key goals.
-
-For example:
-> This project is a [describe your project], built with [key technologies or frameworks]. It helps [target audience] by [what problem it solves or what it does].
-
-## Features
-- Feature 1: Describe a key feature
-- Feature 2: Another feature highlight
-- Feature 3: Any other notable feature
 
 ## Installation
-Provide clear instructions to set up the project on a local machine.
+To run the project locally, you'll need to set up both the **client** (frontend) and **server** (backend) components.
+
+### Prerequisites
+
+- Make sure you have [Node.js](https://nodejs.org/) and [npm](https://www.npmjs.com/) installed for the client.
+- For the server, ensure you have Python 3 installed and [FastAPI](https://fastapi.tiangolo.com/) and any dependencies from `requirements.txt`.
 
 ```bash
 # Clone the repository
@@ -45,12 +37,19 @@ git clone https://github.com/DanielJames0302/Gestura.git
 # Navigate into the project directory
 cd Gestura
 
-# (Optional) Create a virtual environment
+# navigate server folder
 cd server
+
+# Create virtual environment and download packages listed in requirements.txt
 python -m venv venv
 source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-
-# Install the required dependencies
 pip install -r requirements.txt
+
+# run FastAPI server
+uvicorn main:app --reload
+
+# navigate to client folder and run nextjs 
+cd client
+npm run dev
 
 
