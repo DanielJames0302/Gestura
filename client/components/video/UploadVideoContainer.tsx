@@ -48,7 +48,7 @@ const UploadVideoContainer: React.FC<UploadVideoContainerProps> = ({
       setErrorMessage("Please upload valid video format (.mp4)!");
       return;
     }
-    setLoadingMessage("Please wait for translating translating sign language to text");
+    setLoadingMessage("Please wait for extracting captions");
 
     setIsLoading(true);
 

@@ -12,12 +12,8 @@ import React, { useEffect, useState } from "react";
 const ProfilePosts = () => {
   const { user, isLoaded } = useUser();
   const { id } = useParams();
-
   const [loading, setLoading] = useState(true);
-
   const [userData, setUserData] = useState<any>({});
-
-
   const getUserMutation = useMutation(api.users.getUserInfo);
 
   const fetchUser = async () => {

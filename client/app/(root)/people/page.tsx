@@ -9,24 +9,13 @@ import React, { useEffect, useState } from 'react'
 import ErrorPage from 'next/error'
 
 const People = () => {
-  const [loading, setLoading] = useState(true)
+  const allUsers = useQuery(api.relationship.getAllUsers);
 
-  const [allUsers, setAllUsers] = useState<any>([])
-  const getAllUsersMutation = useQuery(api.relationship.getAllUsers);
-
-  const getAllUsers = async () => {
-    const response = getAllUsersMutation;
-    setAllUsers(response);
-    setLoading(false)
-  }
-
-  useEffect(() => {
-    getAllUsers()
-  }, [])
-  return loading ? <Loader /> : (
+  if (allUsers == undefined) return <Loader/>
+  return (
     <div className='flex flex-col gap-4 py-6'>
-      {allUsers && allUsers?.map((user: any) => (
-        <UserCard key={user.id} userData={user} update={getAllUsers} />
+      {allUsers?.map((user: any) => (
+        <UserCard key={user._id} userData={user} update={null} />
       ))}
     </div>
   )

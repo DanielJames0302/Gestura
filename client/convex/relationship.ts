@@ -31,7 +31,7 @@ export const follow = mutation({
 
 export const getAllUsers = query({
   handler: async(ctx) => {
-    const user = ctx.db.query("users").collect();
+    const user = await ctx.db.query("users").collect();
 
     return user;
   }

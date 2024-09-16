@@ -8,6 +8,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import VideoContainer from "../video/VideoContainer";
+import { useUser } from "@clerk/clerk-react";
+import { useState } from "react";
+import LoadingModal from "../modal/LoadingModal";
 
 interface Post {
   creatorId: Id<"users">;
@@ -32,6 +35,8 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
   });
   const router = useRouter();
   const uploadPost = useMutation(api.posts.createPost);
+  const {user} = useUser();
+  const [isLoading, setIsLoading] = useState(false);
 
   const uploadCloudinary = async (file: File) => {
     if (file) {
@@ -53,6 +58,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
 
   const handlePublish = async (data: Post) => {
     try {
+      setIsLoading(true);
       const postForm = new FormData();
 
       postForm.append("creatorId", data.creatorId);
@@ -86,7 +92,8 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
           tag: data.tag,
         }); 
       }
-      router.push(`/profile/${data.creatorId}`)
+      setIsLoading(false);
+      router.push(`/profile/${user?.id}/posts`)
     } catch (err) {
       console.log("Create post failed", err);
     }
@@ -281,6 +288,7 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
       >
         Publish
       </button>
+      {isLoading && <LoadingModal  message={"Post is uploading..."}/>}
     </form>
   );
 };

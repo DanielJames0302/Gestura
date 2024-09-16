@@ -41,12 +41,8 @@ class GesturaController:
   async def generate_video(
     file: UploadFile,
     captions: str,
-    features: RequestFeaturesSchmea
   ) -> FileResponse: 
-    # DEMO
-    if file.filename == "gestura-demo-input.mp4":
-      edited_video_file_path = await gestura_demo_services.generate_video_demo(speech=features.sign_to_speech.selected, emoji=features.sign_to_emoji.selected)
-      return FileResponse(edited_video_file_path)
+    
     
 
     # Text to Speech Feature

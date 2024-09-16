@@ -25,6 +25,7 @@ const Followers = () => {
   useEffect(() => {
     fetchUser();
   }, [id]);
+  console.log(userData)
 
   return loading ? (
     <Loader />
@@ -33,7 +34,7 @@ const Followers = () => {
       <ProfileCard userData={userData} activeTab="Followers" update={fetchUser} />
 
       <div className="flex flex-col gap-9">
-        {userData?.followers?.map((person: any) => (
+        {userData?.followerList?.map((person: any) => (
           <UserCard key={person._id} userData={person} update={fetchUser}/>
         ))}
       </div>

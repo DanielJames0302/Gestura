@@ -40,7 +40,7 @@ const UserCard:React.FC<UserDataProps> = ({ userData, update }) => {
   }, [user]);
 
   const isFollowing = userInfo !== undefined && userInfo?.followingList?.find(
-    (item: any) => item.followedUserId === userData._id
+    (item: any) => item._id === userData._id
   );
 
 

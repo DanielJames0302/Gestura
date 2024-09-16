@@ -17,17 +17,10 @@ export const getCurrentUserInfo = mutation({
     if (identity === null) {
       return null;
     }
-  
     const user = await ctx.db
     .query("users")
     .withIndex("byExternalId", (q) => q.eq("externalId", identity.subject))
     .unique();
- 
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-  
  
     if (!user) {
       throw new Error("User not found");
@@ -43,6 +36,7 @@ export const getCurrentUserInfo = mutation({
         return { ...post, creator };
       }
     });
+
     const bareFollowingList = await ctx.db
     .query("relationships")
     .withIndex("byFollowerId", (q) => q.eq("followerUserId", user._id ?? null))
@@ -51,22 +45,19 @@ export const getCurrentUserInfo = mutation({
     const followingList = await asyncMap(bareFollowingList, async (item) => {
       if (item.followedUserId) {
         const followedUser = await ctx.db.get(item.followedUserId);
-        return { ...item, followedUser };
+        return followedUser
       }
     });
 
-
-
     const bareFollowerList = await ctx.db
     .query("relationships")
-    .withIndex("byFollowerId", (q) => q.eq("followerUserId", user._id ?? null))
+    .filter((q) => q.eq(q.field("followedUserId"), user._id ?? null))
     .collect();
-
-
+    
     const followerList = await asyncMap(bareFollowerList, async (item) => {
       if (item.followerUserId) {
         const followerUser = await ctx.db.get(item.followerUserId);
-        return { ...item, followerUser };
+        return followerUser;
       }
     });
 
@@ -97,6 +88,7 @@ export const getUserInfo = mutation({
         return { ...post, creator };
       }
     });
+
     const bareFollowingList = await ctx.db
     .query("relationships")
     .withIndex("byFollowerId", (q) => q.eq("followerUserId", user._id ?? null))
@@ -105,22 +97,26 @@ export const getUserInfo = mutation({
     const followingList = await asyncMap(bareFollowingList, async (item) => {
       if (item.followedUserId) {
         const followedUser = await ctx.db.get(item.followedUserId);
-        return { ...item, followedUser };
+        return followedUser
       }
     });
 
-
+  
 
     const bareFollowerList = await ctx.db
     .query("relationships")
-    .withIndex("byFollowerId", (q) => q.eq("followerUserId", user._id ?? null))
+    .filter((q) => q.eq(q.field("followedUserId"), user._id ?? null))
     .collect();
+
+
+
+    
 
 
     const followerList = await asyncMap(bareFollowerList, async (item) => {
       if (item.followerUserId) {
         const followerUser = await ctx.db.get(item.followerUserId);
-        return { ...item, followerUser };
+        return followerUser;
       }
     });
 

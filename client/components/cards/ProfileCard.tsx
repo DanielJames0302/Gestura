@@ -49,7 +49,7 @@ const ProfileCard:React.FC<ProfileCardProps> = ({ userData, activeTab, update })
     }
     getUser();
   };
-  console.log(userInfo);
+
   return loading || !isLoaded ? (
     <Loader />
   ) : (
@@ -89,7 +89,7 @@ const ProfileCard:React.FC<ProfileCardProps> = ({ userData, activeTab, update })
           </div>
         </div>
 
-        {userInfo?.externalId !== userData.user.externalId &&
+        {userInfo?.user.externalId !== userData.user.externalId &&
           (isFollowing ? (
             <PersonRemove
               sx={{ color: "#7857FF", cursor: "pointer", fontSize: "40px" }}

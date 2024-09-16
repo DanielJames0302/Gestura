@@ -161,6 +161,7 @@ def extract_audio_from_video(file, audio_path):
 
     video = VideoFileClip(temp_video_path)
     video.audio.write_audiofile(audio_path)
+    print("hello")
 
     video.close()
     os.remove(temp_video_path)
@@ -183,7 +184,7 @@ async def generate_sign_language_video(file, captions):
     print(tokens)
 
     clips = []
-    for token in tokens[3:5]:
+    for token in tokens[3:20]:
         video_path = f'wlasl/{token}.mp4'
         if os.path.exists(video_path):
             clips.append(VideoFileClip(video_path))
