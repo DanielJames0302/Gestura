@@ -224,8 +224,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 If you encounter any issues or have questions:
 
 - **Create an issue** on GitHub
-- **Email us** at support@gestura.com
-- **Join our Discord** community
 
 ---
 
