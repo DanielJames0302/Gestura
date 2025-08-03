@@ -1,3 +1,24 @@
+"""
+Gestura Services Module
+
+This module contains the core business logic for sign language translation and
+video processing operations. It provides services for:
+- Sign language to text translation using MediaPipe
+- Text-to-speech generation
+- Video processing and caption overlay
+- Audio extraction from videos
+- Speech recognition for caption extraction
+- Sign language video generation
+
+The module uses various technologies including:
+- MediaPipe for gesture recognition
+- OpenCV for video processing
+- Google Text-to-Speech (gTTS) for audio synthesis
+- SpeechRecognition for audio-to-text conversion
+- MoviePy for video editing
+
+"""
+
 from fastapi import UploadFile
 from utils.file_handler import save_file_to_local, retrieve_full_file_path_from_local, save_audio_to_local,generate_captioned_video_filepath, save_video
 from utils.caption_formatting import process_timestamps , clean_repeated_words
@@ -15,6 +36,23 @@ from moviepy.editor import VideoFileClip, concatenate_videoclips
 import os
 
 async def translate_sign_language_to_text(video: UploadFile) -> str:
+    """
+    Translates sign language gestures from a video file to text captions.
+    
+    This function uses MediaPipe's gesture recognition model to detect and
+    translate sign language gestures in video frames. It processes the video
+    frame by frame, detects gestures, and formats the results into captions.
+    
+    Args:
+        video (UploadFile): The video file containing sign language content.
+        
+    Returns:
+        str: JSON string containing formatted captions with timestamps.
+            Format: {"timestamp": "gesture_text", ...}
+            
+    Raises:
+        HTTPException: If MediaPipe import fails or processing fails.
+    """
     try:
         import mediapipe as mp
         from mediapipe.tasks import python
@@ -79,7 +117,16 @@ async def translate_sign_language_to_text(video: UploadFile) -> str:
 
 async def generate_text_to_speech(captions: str) -> str:
     """
-    Returns the full file path to the audio file.
+    Generates speech audio from text captions using Google Text-to-Speech.
+    
+    This function converts text captions into speech audio using the gTTS
+    (Google Text-to-Speech) library and saves the audio to a local file.
+    
+    Args:
+        captions (str): The text captions to convert to speech.
+        
+    Returns:
+        str: The full file path to the generated audio file.
     """
     # Passing the text and language to the engine, here we have marked slow=False. Which tells 
     # the module that the converted audio should have a high speed
@@ -94,7 +141,21 @@ async def generate_text_to_speech(captions: str) -> str:
 
 
 async def generate_final_video(video: UploadFile, captions: str, speech_audio_file_path: str):
-
+    """
+    Generates a final video with captions overlaid on the original video.
+    
+    This function creates a new video file that combines the original video
+    with text captions overlaid at the bottom. The captions are positioned
+    and formatted for optimal readability.
+    
+    Args:
+        video (UploadFile): The original video file to process.
+        captions (str): JSON string containing captions with timestamps.
+        speech_audio_file_path (str): Path to the speech audio file (currently unused).
+        
+    Returns:
+        str: The file path to the generated video with captions.
+    """
     # Edit the Video
     full_file_path = save_file_to_local(video=video)
     video_path = full_file_path
@@ -153,6 +214,16 @@ async def generate_final_video(video: UploadFile, captions: str, speech_audio_fi
     return output_path
 
 def extract_audio_from_video(file, audio_path):
+    """
+    Extracts audio from a video file and saves it as a WAV file.
+    
+    This function temporarily saves the uploaded video file, extracts its
+    audio track using MoviePy, and saves the audio to the specified path.
+    
+    Args:
+        file: The uploaded video file.
+        audio_path (str): The path where the extracted audio should be saved.
+    """
     # Load the video file
     temp_video_path = f"temp_videos/{file.filename}"
 
@@ -167,6 +238,21 @@ def extract_audio_from_video(file, audio_path):
     os.remove(temp_video_path)
 
 async def extract_captions_from_video(audio_file) -> str:
+    """
+    Extracts text captions from an audio file using speech recognition.
+    
+    This function uses Google's Speech Recognition API to convert speech
+    in an audio file to text captions.
+    
+    Args:
+        audio_file (str): Path to the audio file to process.
+        
+    Returns:
+        str: The extracted text captions from the audio.
+        
+    Note:
+        Returns None if speech recognition fails or cannot understand the audio.
+    """
     recognizer = sr.Recognizer()
     with sr.AudioFile(audio_file) as source:
         audio_data = recognizer.record(source)
@@ -180,6 +266,21 @@ async def extract_captions_from_video(audio_file) -> str:
 
 
 async def generate_sign_language_video(file, captions):
+    """
+    Generates a sign language video from text captions.
+    
+    This function tokenizes the input text and attempts to find corresponding
+    sign language video clips for each token. It then concatenates these clips
+    into a single video file.
+    
+    Args:
+        file: The base video file (used for naming the output file).
+        captions (str): The text captions to convert to sign language.
+        
+    Returns:
+        str: The file path to the generated sign language video, or None if
+             no matching sign language clips are found.
+    """
     tokens = tokenize_text(captions)
     print(tokens)
 
