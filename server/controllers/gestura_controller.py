@@ -49,15 +49,34 @@ class GesturaController:
         Raises:
             HTTPException: If caption generation fails (status code 500).
         """
-        if file.filename == "gestura-demo-input.mp4":
-            captions = await gestura_demo_services.translate_sign_language_to_text_demo(video=file)
-            return { "captions": captions }
-        
-        captions = await gestura_services.translate_sign_language_to_text(video=file)
+        try:
+            print(f"Processing file: {file.filename}")
+            print(f"File content type: {file.content_type}")
+            print(f"File size: {file.size if hasattr(file, 'size') else 'Unknown'}")
+            
+            if file.filename == "gestura-demo-input.mp4":
+                print("Using demo mode for gestura-demo-input.mp4")
+                captions = await gestura_demo_services.translate_sign_language_to_text_demo(video=file)
+                return { "captions": captions }
+            
+            print("Using production mode for sign language translation")
+            captions = await gestura_services.translate_sign_language_to_text(video=file)
+            print(f"Generated captions: {captions}")
 
-        if not captions:
-            raise HTTPException(500, "Failed to generate captions from sign language!")
-        return { "captions": captions }
+            if not captions:
+                print("ERROR: No captions generated")
+                raise HTTPException(500, "Failed to generate captions from sign language!")
+            
+            print("Successfully generated captions")
+            return { "captions": captions }
+            
+        except HTTPException as e:
+            print(f"HTTPException in translate_sign_language_to_text: {e.detail}")
+            raise e
+        except Exception as e:
+            print(f"Unexpected error in translate_sign_language_to_text: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            raise HTTPException(500, f"Unexpected error during sign language translation: {str(e)}")
     
     @staticmethod
     async def extract_captions_from_video(file: UploadFile) -> dict[str, str]:
@@ -150,6 +169,9 @@ class GesturaController:
         Raises:
             HTTPException: If sign language video generation fails (status code 500).
         """
+        print("Received captions in controller:", captions)
+        print("Captions type:", type(captions))
+        
         generated_video_file_path = await gestura_services.generate_sign_language_video(
             file=file,
             captions=captions

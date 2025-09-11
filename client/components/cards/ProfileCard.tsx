@@ -5,7 +5,7 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { tabs } from "@/constants";
 import Link from "next/link";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 interface ProfileCardProps {
@@ -18,17 +18,26 @@ const ProfileCard:React.FC<ProfileCardProps> = ({ userData, activeTab, update })
   const { user, isLoaded } = useUser();
 
   const [loading, setLoading] = useState(true);
-
   const [userInfo, setUserInfo] = useState<any>({});
 
   const getUser = useMutation(api.users.getCurrentUserInfo);
   const followMutation = useMutation(api.relationship.follow);
+
+
+  const isFollowing = useQuery(api.relationship.isFollowing, 
+    userData?.user?._id ? { targetUserId: userData.user._id } : "skip"
+  );
+  console.log(userData?.user?._id)
+  const followCounts = useQuery(api.relationship.getFollowCounts, 
+    userData?.user?._id ? { userId: userData.user._id } : "skip"
+  );
 
   const fetchUser = async () => {
     const response = await getUser();
     setUserInfo(response);
     setLoading(false);
   };
+  
   const myLoader = ({ src }: any) => {
     return src;
   };
@@ -39,15 +48,11 @@ const ProfileCard:React.FC<ProfileCardProps> = ({ userData, activeTab, update })
     }
   }, [user]);
 
-  const isFollowing = userInfo !== undefined &&  userInfo?.followingList?.find(
-    (item: any) => item.followedUserId === userData.user._id
-  );
-
   const handleFollow = async () => {
     if (user) {
       await followMutation({followedId: userData.user._id, followerId: user.id});
+      // The UI will automatically update due to reactive queries
     }
-    getUser();
   };
 
   return loading || !isLoaded ? (
@@ -67,22 +72,22 @@ const ProfileCard:React.FC<ProfileCardProps> = ({ userData, activeTab, update })
 
           <div className="flex flex-col gap-3">
             <p className="text-light-1 text-heading3-bold max-sm:text-heading4-bold">
-              {userData.firstName} {userData.lastName}
+              {userData.user?.firstName} {userData.user?.lastName}
             </p>
             <p className="text-light-3 text-subtle-semibold">
-              {userData.username}
+              {userData.user?.username}
             </p>
             <div className="flex gap-7 text-small-bold max-sm:gap-4">
               <div className="flex max-sm:flex-col gap-2 items-center max-sm:gap-0.5">
-                <p className="text-purple-1">{userData.posts!.length}</p>
+                <p className="text-purple-1">{userData.posts?.length || 0}</p>
                 <p className="text-light-1">Posts</p>
               </div>
               <div className="flex max-sm:flex-col gap-2 items-center max-sm:gap-0.5">
-                <p className="text-purple-1">{userData.followerList!.length}</p>
+                <p className="text-purple-1">{followCounts?.followersCount || 0}</p>
                 <p className="text-light-1">Followers</p>
               </div>
               <div className="flex max-sm:flex-col gap-2 items-center max-sm:gap-0.5">
-                <p className="text-purple-1">{userData.followingList!.length}</p>
+                <p className="text-purple-1">{followCounts?.followingCount || 0}</p>
                 <p className="text-light-1">Following</p>
               </div>
             </div>

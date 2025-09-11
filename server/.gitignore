@@ -166,3 +166,5 @@ uploads/
 generated-files/
 demo/
 wlasl/
+video_output_path/
+audio_output_path/

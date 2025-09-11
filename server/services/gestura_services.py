@@ -34,6 +34,7 @@ import speech_recognition as sr
 from utils.tokenize_text import tokenize_text
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 import os
+from .pose_visualization_service import pose_visualization_service
 
 async def translate_sign_language_to_text(video: UploadFile) -> str:
     """
@@ -54,65 +55,112 @@ async def translate_sign_language_to_text(video: UploadFile) -> str:
         HTTPException: If MediaPipe import fails or processing fails.
     """
     try:
+        print("Starting sign language translation process...")
+        print(f"Video filename: {video.filename}")
+        print(f"Video content type: {video.content_type}")
+        
         import mediapipe as mp
         from mediapipe.tasks import python
         from mediapipe.tasks.python import vision
-    except:
-        print("Failed to import mediapipe")
+        print(f"MediaPipe version: {mp.__version__}")
+    except ImportError as e:
+        print(f"Failed to import mediapipe: {e}")
+        print("This is likely due to protobuf version compatibility issues.")
+        print("Please run: python fix_mediapipe.py")
+        raise HTTPException(500, "MediaPipe not properly installed. Please run fix_mediapipe.py to resolve compatibility issues.")
+    except Exception as e:
+        print(f"Unexpected error importing mediapipe: {e}")
         raise HTTPException(500, "Server error. Please try again later. Please use the demo video input if you would like to AiSL in action.")
-    full_file_path = save_file_to_local(video=video)
-
-   
-    #set up model
-    model_path = os.path.join(os.path.dirname(__file__), 'gesture_recognizer.task')
-    base_options = python.BaseOptions(model_asset_path=model_path)
- 
-  
-    options = vision.GestureRecognizerOptions(base_options=base_options)
-
-    recognizer = vision.GestureRecognizer.create_from_options(options=options)
-
-
-    # Create a VideoCapture object
-    cap = cv2.VideoCapture(full_file_path)
-
-    captions={}
     
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
+    try:
+        print("Saving video file to local storage...")
+        full_file_path = save_file_to_local(video=video)
+        print(f"Video saved to: {full_file_path}")
+    except Exception as e:
+        print(f"Error saving video file: {e}")
+        raise HTTPException(500, f"Failed to save video file: {str(e)}")
 
-        # Convert the frame to RGB
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image.flags.writeable = False
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
+    try:
+        #set up model
+        print("Loading gesture recognition model...")
+        model_path = os.path.join(os.path.dirname(__file__), 'gesture_recognizer_9.task')
+        print(f"Model path: {model_path}")
+        
+        if not os.path.exists(model_path):
+            print(f"ERROR: Model file not found at {model_path}")
+            raise HTTPException(500, "Gesture recognition model not found!")
+        
+        base_options = python.BaseOptions(model_asset_path=model_path)
+        options = vision.GestureRecognizerOptions(base_options=base_options)
+        recognizer = vision.GestureRecognizer.create_from_options(options=options)
+        print("Model loaded successfully")
 
-        # Process the image and detect hands
-        results = recognizer.recognize(mp_image)
-        if len(results.gestures)>0:
-            top_gesture = results.gestures[0][0]
+        # Create a VideoCapture object
+        print("Opening video file...")
+        cap = cv2.VideoCapture(full_file_path)
+        
+        if not cap.isOpened():
+            print("ERROR: Could not open video file")
+            raise HTTPException(500, "Could not open video file for processing!")
+
+        print("Video opened successfully, processing frames...")
+        captions={}
+        frame_count = 0
+        
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+                
+            frame_count += 1
+            timestamp = cap.get(cv2.CAP_PROP_POS_MSEC)
+
+            # Convert the frame to RGB
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image.flags.writeable = False
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
+
+            # Process the image and detect hands
+            try:
+                results = recognizer.recognize(mp_image)
+                if len(results.gestures)>0:
+                    top_gesture = results.gestures[0][0]
+                    
+                    timestamp_time = str(datetime.timedelta(milliseconds=timestamp))
+                    if top_gesture.category_name:
+                        captions[timestamp_time]=top_gesture.category_name
+                        print(f"Frame {frame_count}: detected {top_gesture.category_name}")
+            except Exception as e:
+                print(f"Error processing frame {frame_count}: {e}")
+                continue
+
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             
-            timestamp_time = str(datetime.timedelta(milliseconds=timestamp))
-            if top_gesture.category_name:
-                captions[timestamp_time]=top_gesture.category_name
-                print("detected",top_gesture.category_name)
-        
-        
+        cap.release()
+        print(f"Processed {frame_count} frames")
+        print(f"Total gestures detected: {len(captions)}")
 
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    cap.release()
-
-    
-    # format captions
-    processed_captions = process_timestamps(captions)
-    processed_cleaned_captions = clean_repeated_words(processed_captions)
-    processed_cleaned_captions_json = json.dumps(processed_cleaned_captions)
-    print("formatted_captions",processed_cleaned_captions_json)
-    
-    return str(processed_cleaned_captions_json)
+        if not captions:
+            print("WARNING: No gestures detected in the video")
+            return json.dumps({"0:00:00": "No gestures detected"})
+        
+        # format captions
+        print("Formatting captions...")
+        processed_captions = process_timestamps(captions)
+        processed_cleaned_captions = clean_repeated_words(processed_captions)
+        processed_cleaned_captions_json = json.dumps(processed_cleaned_captions)
+        print("formatted_captions",processed_cleaned_captions_json)
+        
+        return str(processed_cleaned_captions_json)
+        
+    except HTTPException as e:
+        print(f"HTTPException in video processing: {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error in video processing: {e}")
+        print(f"Error type: {type(e).__name__}")
+        raise HTTPException(500, f"Error processing video: {str(e)}")
 
 
 async def generate_text_to_speech(captions: str) -> str:
@@ -232,7 +280,6 @@ def extract_audio_from_video(file, audio_path):
 
     video = VideoFileClip(temp_video_path)
     video.audio.write_audiofile(audio_path)
-    print("hello")
 
     video.close()
     os.remove(temp_video_path)
@@ -267,11 +314,67 @@ async def extract_captions_from_video(audio_file) -> str:
 
 async def generate_sign_language_video(file, captions):
     """
-    Generates a sign language video from text captions.
+    Generates a sign language pose video from text captions using ZurichNLP model.
     
-    This function tokenizes the input text and attempts to find corresponding
-    sign language video clips for each token. It then concatenates these clips
-    into a single video file.
+    This function uses the ZurichNLP spoken-to-signed translation model to convert
+    text captions into pose-based sign language videos (GIF or MP4).
+    
+    Args:
+        file: The base video file (used for naming the output file).
+        captions (str): The text captions to convert to sign language.
+        
+    Returns:
+        str: The file path to the generated sign language video, or None if
+             generation fails.
+    """
+    # Parse captions if it's a JSON string, otherwise use as plain text
+    try:
+        captions_data = json.loads(captions)
+        # Extract text from JSON captions (assuming it's a dict with timestamp: text format)
+        if isinstance(captions_data, dict):
+            # Join all caption texts into a single string
+            caption_text = " ".join(captions_data.values())
+        else:
+            caption_text = captions
+    except (json.JSONDecodeError, AttributeError):
+        # If it's not JSON, use as plain text
+        caption_text = captions
+    
+    print("Processing captions with ZurichNLP pose model:", caption_text)
+    
+    try:
+        # Generate output path for MP4
+        output_path = f"video_output_path/{file.filename}-sign-version.mp4"
+        
+        # Use pose visualization service to generate sign language video
+        generated_video_path = await pose_visualization_service.text_to_pose_mp4(
+            text=caption_text,
+            output_path=output_path,
+            width=256,
+            height=256,
+            fps=30
+        )
+        
+        if generated_video_path and os.path.exists(generated_video_path):
+            print(f"Successfully generated sign language pose video: {generated_video_path}")
+            return generated_video_path
+        else:
+            print("Failed to generate sign language pose video")
+            return None
+            
+    except Exception as e:
+        print(f"Error generating sign language pose video: {e}")
+        # Fallback to the original method if pose generation fails
+        print("Falling back to original video concatenation method...")
+        return await generate_sign_language_video_fallback(file, captions)
+
+
+async def generate_sign_language_video_fallback(file, captions):
+    """
+    Fallback method for generating sign language video using the original approach.
+    
+    This function uses the original token-based video concatenation method as a
+    fallback when the ZurichNLP model is not available or fails.
     
     Args:
         file: The base video file (used for naming the output file).
@@ -281,21 +384,51 @@ async def generate_sign_language_video(file, captions):
         str: The file path to the generated sign language video, or None if
              no matching sign language clips are found.
     """
-    tokens = tokenize_text(captions)
-    print(tokens)
+    # Parse captions if it's a JSON string, otherwise use as plain text
+    try:
+        captions_data = json.loads(captions)
+        # Extract text from JSON captions (assuming it's a dict with timestamp: text format)
+        if isinstance(captions_data, dict):
+            # Join all caption texts into a single string
+            caption_text = " ".join(captions_data.values())
+        else:
+            caption_text = captions
+    except (json.JSONDecodeError, AttributeError):
+        # If it's not JSON, use as plain text
+        caption_text = captions
+    
+    print("Processing captions with fallback method:", caption_text)
+    tokens = tokenize_text(caption_text)
+    print("Tokenized text:", tokens)
 
     clips = []
-    for token in tokens[3:20]:
-        video_path = f'wlasl/{token}.mp4'
-        if os.path.exists(video_path):
-            clips.append(VideoFileClip(video_path))
-    
-    if clips:
-        # Concatenate the clips into one video
-        final_clip = concatenate_videoclips(clips, method="compose")
-        output_path = f"video_output_path/{file.filename}-sign-version.mp4"
-        final_clip.write_videofile(output_path)
-        return output_path
-    else:
+    try:
+        for token in tokens[3:20]:  # Limit to first 17 tokens to avoid too long videos
+            video_path = f'wlasl/{token}.mp4'
+            if os.path.exists(video_path):
+                clips.append(VideoFileClip(video_path))
+        
+        if clips:
+            # Concatenate the clips into one video
+            final_clip = concatenate_videoclips(clips, method="compose")
+            output_path = f"video_output_path/{file.filename}-sign-version.mp4"
+            final_clip.write_videofile(output_path)
+            
+            # Clean up individual clips
+            for clip in clips:
+                clip.close()
+            
+            return output_path
+        else:
+            print("No matching sign language clips found for tokens:", tokens)
+            return None
+    except Exception as e:
+        print(f"Error generating sign language video with fallback method: {e}")
+        # Clean up clips if there was an error
+        for clip in clips:
+            try:
+                clip.close()
+            except:
+                pass
         return None
   

@@ -1,6 +1,6 @@
 "use client"
 
-import { AddPhotoAlternateOutlined } from "@mui/icons-material";
+import { AddPhotoAlternateOutlined, CloudUploadOutlined, VideoFileOutlined, CheckCircleOutlined, ErrorOutlined, CloseOutlined } from "@mui/icons-material";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
@@ -101,194 +101,224 @@ const Posting: React.FC<PostingProps> = ({ post }) => {
 
   return (
     <form
-      className="flex flex-col gap-7 pb-24"
+      className="space-y-6"
       onSubmit={handleSubmit(handlePublish)}
     >
-      <label
-        htmlFor="postVideo"
-        className="flex gap-4 items-center text-light-1 cursor-pointer"
-      >
-        {watch("postVideo")?.length ? (
-          // Check profile photo is a string or a file
-          typeof watch("postVideo") === "string" ? (
-            <video
-              width="250"
-              height="200"
-              controls
-              className="object-cover rounded-lg"
-            >
-              <source src={watch("postVideo") as string} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+      {/* Main Video Upload */}
+      <div className="space-y-3">
+        <label htmlFor="postVideo" className="block text-light-1 text-body-bold">
+          Main Video *
+        </label>
+        <label
+          htmlFor="postVideo"
+          className={`relative block w-full p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 hover:border-purple-1 ${
+            watch("postVideo")?.length 
+              ? 'border-green-500 bg-green-500/10' 
+              : 'border-light-3 hover:bg-dark-1'
+          }`}
+        >
+          {watch("postVideo")?.length ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-400">
+                <CheckCircleOutlined sx={{ fontSize: "20px" }} />
+                <span className="text-small-bold">Video uploaded successfully!</span>
+              </div>
+              <div className="relative bg-dark-1 rounded-lg overflow-hidden">
+                {typeof watch("postVideo") === "string" ? (
+                  <video
+                    width="100%"
+                    height="200"
+                    controls
+                    className="w-full h-auto max-h-[200px] object-contain"
+                  >
+                    <source src={watch("postVideo") as string} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <video
+                    width="100%"
+                    height="200"
+                    controls
+                    className="w-full h-auto max-h-[200px] object-contain"
+                  >
+                    <source
+                      src={URL.createObjectURL((watch("postVideo") as FileList)[0])}
+                      type="video/mp4"
+                    />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+            </div>
           ) : (
-            <video
-              width="500"
-              height="500"
-              controls
-              className="object-cover rounded-lg"
-            >
-              <source
-                src={URL.createObjectURL((watch("postVideo") as FileList)[0])}
-                type="video/mp4"
-              />
-              Your browser does not support the video tag.
-            </video>
-          )
-        ) : (
-          <AddPhotoAlternateOutlined
-            sx={{ fontSize: "100px", color: "white" }}
-          />
+            <div className="flex flex-col items-center justify-center space-y-3">
+              <CloudUploadOutlined sx={{ fontSize: "48px", color: "#7857FF" }} />
+              <div className="text-center">
+                <p className="text-light-1 text-body-bold">Click to upload video</p>
+                <p className="text-light-2 text-small-semibold">Supports MP4, MOV, AVI formats</p>
+              </div>
+            </div>
+          )}
+        </label>
+        
+        <input
+          {...register("postVideo", {
+            validate: (value) => {
+              if (
+                typeof value === null ||
+                (Array.isArray(value) && value.length === 0) ||
+                value === "underfined"
+              ) {
+                return "A video is required!";
+              }
+              return true;
+            },
+          })}
+          id="postVideo"
+          type="file"
+          accept="video/*"
+          style={{ display: "none" }}
+        />
+        
+        {errors.postVideo && (
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <ErrorOutlined sx={{ fontSize: "16px", color: "#EF4444" }} />
+            <p className="text-red-400 text-small-semibold">
+              {typeof errors.postVideo.message === "string" && errors.postVideo.message}
+            </p>
+          </div>
         )}
-        <p>Upload a video</p>
-      </label>
+      </div>
 
-      <input
-        {...register("postVideo", {
-          validate: (value) => {
-            if (
-              typeof value === null ||
-              (Array.isArray(value) && value.length === 0) ||
-              value === "underfined"
-            ) {
-              return "A video is required!";
-            }
-            return true;
-          },
-        })}
-        id="postVideo"
-        type="file"
-        accept="video/*"
-        style={{ display: "none" }}
-      />
-      {errors.postVideo && (
-        <p className="text-red-500">
-          {" "}
-          {typeof errors.postVideo.message === "string" &&
-            errors.postVideo.message}
-        </p>
-      )}
-      <label
-        htmlFor="signVideo"
-        className="flex gap-4 items-center text-light-1 cursor-pointer"
-      >
-        {watch("signVideo")?.length ? (
-          // Check profile photo is a string or a file
-          typeof watch("signVideo") === "string" ? (
-            <video
-              width="250"
-              height="200"
-              controls
-              className="object-cover rounded-lg"
-            >
-              <source src={watch("signVideo") as string} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+      {/* Sign Language Video Upload */}
+      <div className="space-y-3">
+        <label htmlFor="signVideo" className="block text-light-1 text-body-bold">
+          Sign Language Video (Optional)
+        </label>
+        <label
+          htmlFor="signVideo"
+          className={`relative block w-full p-6 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 hover:border-purple-1 ${
+            watch("signVideo")?.length 
+              ? 'border-green-500 bg-green-500/10' 
+              : 'border-light-3 hover:bg-dark-1'
+          }`}
+        >
+          {watch("signVideo")?.length ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-400">
+                <CheckCircleOutlined sx={{ fontSize: "20px" }} />
+                <span className="text-small-bold">Sign language video uploaded!</span>
+              </div>
+              <div className="relative bg-dark-1 rounded-lg overflow-hidden">
+                {typeof watch("signVideo") === "string" ? (
+                  <video
+                    width="100%"
+                    height="200"
+                    controls
+                    className="w-full h-auto max-h-[200px] object-contain"
+                  >
+                    <source src={watch("signVideo") as string} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <video
+                    width="100%"
+                    height="200"
+                    controls
+                    className="w-full h-auto max-h-[200px] object-contain"
+                  >
+                    <source
+                      src={URL.createObjectURL((watch("signVideo") as FileList)[0])}
+                      type="video/mp4"
+                    />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+            </div>
           ) : (
-            <video
-              width="500"
-              height="500"
-              controls
-              className="object-cover rounded-lg"
-            >
-              <source
-                src={URL.createObjectURL((watch("signVideo") as FileList)[0])}
-                type="video/mp4"
-              />
-              Your browser does not support the video tag.
-            </video>
-          )
-        ) : (
-          <AddPhotoAlternateOutlined
-            sx={{ fontSize: "100px", color: "white" }}
-          />
-        )}
-        <p>Upload a sign language video (Optional)</p>
-      </label>
+            <div className="flex flex-col items-center justify-center space-y-3">
+              <VideoFileOutlined sx={{ fontSize: "48px", color: "#7857FF" }} />
+              <div className="text-center">
+                <p className="text-light-1 text-body-bold">Add sign language video</p>
+                <p className="text-light-2 text-small-semibold">Optional - for accessibility</p>
+              </div>
+            </div>
+          )}
+        </label>
+        
+        <input
+          {...register("signVideo")}
+          id="signVideo"
+          type="file"
+          accept="video/*"
+          style={{ display: "none" }}
+        />
+      </div>
 
-      <input
-        {...register("signVideo", {
-          validate: (value) => {
-            if (
-              typeof value === null ||
-              (Array.isArray(value) && value.length === 0) ||
-              value === "underfined"
-            ) {
-              return "A video is required!";
-            }
-            return true;
-          },
-        })}
-        id="signVideo"
-        type="file"
-        accept="video/*"
-        style={{ display: "none" }}
-      />
-      {errors.signVideo && (
-        <p className="text-red-500">
-          {" "}
-          {typeof errors.signVideo.message === "string" &&
-            errors.signVideo.message}
-        </p>
-      )}
-   
-      <div>
-        <label htmlFor="caption" className="text-light-1">
-          {" "}
-          Caption
+      {/* Caption */}
+      <div className="space-y-2">
+        <label htmlFor="caption" className="block text-light-1 text-body-bold">
+          Caption *
         </label>
         <textarea
           {...register("caption", {
-            required: "caption is required",
+            required: "Caption is required",
             validate: (value: any) => {
               if (value.length < 3) {
                 return "Caption must be more than 2 characters";
               }
             },
           })}
-          typeof="text"
-          rows={3}
-          placeholder="what's on your mind ?"
-          className="w-full input"
+          rows={4}
+          placeholder="What's on your mind? Share your thoughts..."
+          className="w-full p-4 bg-dark-1 border border-dark-2 rounded-lg text-light-1 text-body-normal resize-none focus:outline-none focus:border-purple-1 transition-colors"
           id="caption"
         />
-
         {errors.caption && (
-          <p className="text-red-500">
-            {" "}
-            {typeof errors.caption.message === "string" &&
-              errors.caption.message}
-          </p>
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <ErrorOutlined sx={{ fontSize: "16px", color: "#EF4444" }} />
+            <p className="text-red-400 text-small-semibold">
+              {typeof errors.caption.message === "string" && errors.caption.message}
+            </p>
+          </div>
         )}
       </div>
 
-      <div>
-        <label htmlFor="caption" className="text-light-1">
-          {" "}
+      {/* Tag */}
+      <div className="space-y-2">
+        <label htmlFor="tag" className="block text-light-1 text-body-bold">
           Tag
         </label>
         <input
-          {...register("tag", { required: "caption is required" })}
-          typeof="text"
-          placeholder="#tag"
-          className="w-full input"
+          {...register("tag", { required: "Tag is required" })}
+          type="text"
+          placeholder="#accessibility #signlanguage #community"
+          className="w-full p-4 bg-dark-1 border border-dark-2 rounded-lg text-light-1 text-body-normal focus:outline-none focus:border-purple-1 transition-colors"
           id="tag"
         />
-
         {errors.tag && (
-          <p className="text-red-500">
-            {" "}
-            {typeof errors.tag.message === "string" && errors.tag.message}
-          </p>
+          <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <ErrorOutlined sx={{ fontSize: "16px", color: "#EF4444" }} />
+            <p className="text-red-400 text-small-semibold">
+              {typeof errors.tag.message === "string" && errors.tag.message}
+            </p>
+          </div>
         )}
       </div>
 
-      <button
-        type="submit"
-        className="py-2.5 rounded-lg mt-10 bg-purple-1 hover:bg-pink-1 text-light-1"
-      >
-        Publish
-      </button>
-      {isLoading && <LoadingModal  message={"Post is uploading..."}/>}
+      {/* Submit Button */}
+      <div className="pt-4">
+        <button
+          type="submit"
+          className="w-full py-4 bg-gradient-to-r from-purple-1 to-pink-1 hover:from-purple-1/80 hover:to-pink-1/80 text-light-1 text-body-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          <AddPhotoAlternateOutlined sx={{ fontSize: "20px" }} />
+          Publish Post
+        </button>
+      </div>
+
+      {isLoading && <LoadingModal message="Post is uploading..." />}
     </form>
   );
 };

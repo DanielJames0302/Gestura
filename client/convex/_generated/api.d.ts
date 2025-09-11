@@ -18,6 +18,7 @@ import type * as http from "../http.js";
 import type * as posts from "../posts.js";
 import type * as relationship from "../relationship.js";
 import type * as search from "../search.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 /**
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   posts: typeof posts;
   relationship: typeof relationship;
   search: typeof search;
+  seed: typeof seed;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

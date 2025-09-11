@@ -28,6 +28,9 @@ export const feedPost = query({
       if (post.creatorId) {
         const creator = await ctx.db.get(post.creatorId);
         return { ...post, creator };
+      } else {
+        // Return post without creator if creatorId is null
+        return { ...post, creator: null };
       }
     });
     return posts;

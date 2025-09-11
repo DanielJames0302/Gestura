@@ -1,12 +1,16 @@
 {
   "name": "gestura",
+  "displayName": "Gestura",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "node scripts/seed-database.js seed",
+    "seed:clear": "node scripts/seed-database.js clear",
+    "seed:status": "node scripts/seed-database.js status"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.4.1",

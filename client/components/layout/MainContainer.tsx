@@ -14,15 +14,14 @@ const MainContainer = ({
 
   const title = pageTitles.find((page) => page.url === firstPath)?.title || ''
   return (
-    <section className='flex flex-col flex-1 max-w-3xl px-4 py-10 md:px-10 lg:px-4 xl-px-20'>
+    <section className='flex flex-col flex-1 max-w-4xl mx-auto px-4 py-10 md:px-10 lg:px-6 xl:px-8'>
       <TopBar />
       <div className='mt-6 mb-20'>
         <h1 className='mb-5 text-heading2-bold max-sm:text-heading3-bold text-light-1'>{title}</h1>
-      <div className='h-screen'>
-        {children}
+        <div className='min-h-screen'>
+          {children}
+        </div>
       </div>
-      </div>
-
     </section>
   )
 }

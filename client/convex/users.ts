@@ -3,6 +3,11 @@ import { UserJSON } from "@clerk/backend";
 import { asyncMap } from "convex-helpers";
 import { v, Validator } from "convex/values";
 
+// Helper function to filter out null/undefined values from asyncMap results
+function filterNulls<T>(arr: (T | null | undefined)[]): T[] {
+  return arr.filter((item): item is T => item !== null && item !== undefined);
+}
+
 export const current = mutation({
   args: {},
   handler: async (ctx) => {
@@ -35,6 +40,7 @@ export const getCurrentUserInfo = mutation({
         const creator = await ctx.db.get(post.creatorId);
         return { ...post, creator };
       }
+      return null;
     });
 
     const bareFollowingList = await ctx.db
@@ -47,6 +53,7 @@ export const getCurrentUserInfo = mutation({
         const followedUser = await ctx.db.get(item.followedUserId);
         return followedUser
       }
+      return null;
     });
 
     const bareFollowerList = await ctx.db
@@ -59,9 +66,15 @@ export const getCurrentUserInfo = mutation({
         const followerUser = await ctx.db.get(item.followerUserId);
         return followerUser;
       }
+      return null;
     });
 
-    return {user, posts, followingList, followerList};
+    return {
+      user, 
+      posts: filterNulls(posts), 
+      followingList: filterNulls(followingList), 
+      followerList: filterNulls(followerList)
+    };
   }
 })
 
@@ -87,6 +100,7 @@ export const getUserInfo = mutation({
         const creator = await ctx.db.get(post.creatorId);
         return { ...post, creator };
       }
+      return null;
     });
 
     const bareFollowingList = await ctx.db
@@ -99,28 +113,28 @@ export const getUserInfo = mutation({
         const followedUser = await ctx.db.get(item.followedUserId);
         return followedUser
       }
+      return null;
     });
-
-  
 
     const bareFollowerList = await ctx.db
     .query("relationships")
     .filter((q) => q.eq(q.field("followedUserId"), user._id ?? null))
     .collect();
 
-
-
-    
-
-
     const followerList = await asyncMap(bareFollowerList, async (item) => {
       if (item.followerUserId) {
         const followerUser = await ctx.db.get(item.followerUserId);
         return followerUser;
       }
+      return null;
     });
 
-    return {user, posts, followingList, followerList};
+    return {
+      user, 
+      posts: filterNulls(posts), 
+      followingList: filterNulls(followingList), 
+      followerList: filterNulls(followerList)
+    };
   }
 })
 
@@ -137,10 +151,10 @@ export const getUserFollowing = mutation({
         const followedUserId = await ctx.db.get(following.followedUserId);
         return { ...following, followedUserId };
       }
+      return null;
     });
 
-
-    return followingList
+    return filterNulls(followingList);
   }
 })
 
@@ -208,4 +222,71 @@ export async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .withIndex("byExternalId", (q) => q.eq("externalId", externalId))
     .unique();
 }
+
+// Get all users (for seeding status)
+export const getAllUsers = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});
+
+// Debug query to check relationships
+export const debugRelationships = query({
+  handler: async (ctx) => {
+    const relationships = await ctx.db.query("relationships").collect();
+    const users = await ctx.db.query("users").collect();
+    
+    return {
+      relationships,
+      users: users.map(u => ({ id: u._id, externalId: u.externalId, username: u.username }))
+    };
+  },
+});
+
+// Clean up orphaned relationships
+export const cleanupOrphanedRelationships = internalMutation({
+  handler: async (ctx) => {
+    const relationships = await ctx.db.query("relationships").collect();
+    const users = await ctx.db.query("users").collect();
+    const userIds = new Set(users.map(u => u._id));
+    
+    let cleanedCount = 0;
+    
+    for (const rel of relationships) {
+      const followerExists = userIds.has(rel.followerUserId);
+      const followedExists = userIds.has(rel.followedUserId);
+      
+      if (!followerExists || !followedExists) {
+        console.log(`Deleting orphaned relationship: ${rel.followerUserId} -> ${rel.followedUserId}`);
+        await ctx.db.delete(rel._id);
+        cleanedCount++;
+      }
+    }
+    
+    return { cleanedCount };
+  },
+});
+
+// Public version for cleanup
+export const cleanupOrphanedRelationshipsPublic = mutation({
+  handler: async (ctx) => {
+    const relationships = await ctx.db.query("relationships").collect();
+    const users = await ctx.db.query("users").collect();
+    const userIds = new Set(users.map(u => u._id));
+    
+    let cleanedCount = 0;
+    
+    for (const rel of relationships) {
+      const followerExists = userIds.has(rel.followerUserId);
+      const followedExists = userIds.has(rel.followedUserId);
+      
+      if (!followerExists || !followedExists) {
+        await ctx.db.delete(rel._id);
+        cleanedCount++;
+      }
+    }
+    
+    return { cleanedCount };
+  },
+});
 
